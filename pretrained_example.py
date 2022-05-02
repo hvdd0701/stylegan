@@ -14,8 +14,10 @@ import PIL.Image
 import dnnlib
 import dnnlib.tflib as tflib
 import config
+import argparse
 
-def main():
+
+def main(args):
     # Initialize TensorFlow.
     tflib.init_tf()
 
@@ -27,21 +29,33 @@ def main():
         # _D = Instantaneous snapshot of the discriminator. Mainly useful for resuming a previous training run.
         # Gs = Long-term average of the generator. Yields higher-quality results than the instantaneous snapshot.
 
+    
+
     # Print network details.
     Gs.print_layers()
 
+    for i in range(1,args.num_ims):
+
     # Pick latent vector.
-    rnd = np.random.RandomState(5)
-    latents = rnd.randn(1, Gs.input_shape[1])
+        rnd = np.random.RandomState(5)
+        latents = rnd.randn(1, Gs.input_shape[1])
+        length = np.linalg.norm(latents)
+        latents = (args.rad)*(latents/length)
 
-    # Generate image.
-    fmt = dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True)
-    images = Gs.run(latents, None, truncation_psi=0.7, randomize_noise=True, output_transform=fmt)
+        # Generate image.
+        fmt = dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True)
+        images = Gs.run(latents, None, truncation_psi=0.7, randomize_noise=True, output_transform=fmt)
 
-    # Save image.
-    os.makedirs(config.result_dir, exist_ok=True)
-    png_filename = os.path.join(config.result_dir, 'example.png')
-    PIL.Image.fromarray(images[0], 'RGB').save(png_filename)
+        images.show()
+
+        # Save image.
+        os.makedirs(config.result_dir, exist_ok=True)
+        png_filename = os.path.join(config.result_dir,'/rad=',str(args.rad),'/example_',str(i),'.png')
+        PIL.Image.fromarray(images[0], 'RGB').save(png_filename)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--rad",nargs = '?', default = 1, type = float)
+    parser.add_argument("--num_ims",nargs = '?', default = 1, type = int)
+    args = parser.parse_args()
+    main(args)
